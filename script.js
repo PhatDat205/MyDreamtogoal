@@ -74,8 +74,9 @@ function loadMonthData(month) {
     }
 }
 
+// Hàm tính toán chính (Gọi mỗi khi có thay đổi input)
 function updateCalculation() {
-    saveCurrentMonthData();   // auto-save mỗi lần thay đổi
+    saveCurrentMonthData(); // Tự động lưu ngầm
 
     const weekInputs = document.querySelectorAll('.week-hour');
     let baseHours = 0;
@@ -92,7 +93,7 @@ function updateCalculation() {
     const remainingWeeks = totalWeeks - filledCount;
     const predicted = remainingWeeks > 0 ? Math.round(remainingHours / remainingWeeks * 2) / 2 : 0;
 
-    // Cập nhật bên phải
+    // Cập nhật giao diện bên phải
     document.getElementById('total-base-display').textContent = baseHours.toFixed(1);
     document.getElementById('remaining-display').textContent = remainingHours.toFixed(1);
     document.getElementById('weeks-remaining-display').textContent = remainingWeeks;
@@ -107,14 +108,14 @@ function updateCalculation() {
     document.getElementById('status-text').innerHTML = statusText;
     progressBar.style.background = (baseHours >= 117 && baseHours <= 123) ? '#10b981' : (baseHours < 117 ? '#3b82f6' : '#ef4444');
 
-    // DỰ ĐOÁN CHI TIẾT CHO TỪNG TUẦN CHƯA NHẬP
+    // DỰ ĐOÁN
     const predictionList = document.getElementById('prediction-list');
     let html = '';
     if (remainingWeeks > 0) {
         const unfilledWeeks = [];
         weekInputs.forEach((inp, idx) => {
             if (inp.value.trim() === '') {
-                unfilledWeeks.push(idx + 1);   // week number
+                unfilledWeeks.push(idx + 1);
             }
         });
         unfilledWeeks.forEach(w => {
@@ -125,13 +126,18 @@ function updateCalculation() {
     }
     predictionList.innerHTML = html;
 
-    // Tính lương
+    // ================= TÍNH LƯƠNG (ĐÃ SỬA LOGIC) =================
     const hourly = parseFloat(document.getElementById('hourly').value) || 0;
     const night = parseFloat(document.getElementById('night').value) || 0;
     const bonus = parseFloat(document.getElementById('bonus').value) || 0;
     const llTimes = parseInt(document.getElementById('ll-times').value) || 0;
 
-    const totalEquivHours = baseHours + night * 0.5 + bonus * 3;
+    // Vì giờ lễ đã nằm trong tổng giờ tuần (đã được tính x1)
+    // Nên ở đây chỉ cần cộng thêm phần dư là nhân 2 (để x1 + x2 = x3)
+    const nightContrib = night * 0.5;
+    const bonusContrib = bonus * 2; 
+
+    const totalEquivHours = baseHours + nightContrib + bonusContrib;
     const hoursSalary = totalEquivHours * hourly;
     const llSalary = llTimes * 15000;
     const totalSalary = hoursSalary + llSalary;
@@ -142,10 +148,11 @@ function updateCalculation() {
     document.getElementById('salary-total').textContent = formatter.format(Math.round(totalSalary)) + ' VND';
     document.getElementById('salary-final').textContent = formatter.format(Math.round(totalSalary)) + ' VND';
 
-    // Hiển thị nút Lưu nếu đã nhập đủ tuần
-    const allFilled = Array.from(weekInputs).every(inp => inp.value.trim() !== '');
+    // Hiện nút lưu dữ liệu nếu đã nhập đủ các tuần
     const saveBtn = document.getElementById('save-month-btn');
-    saveBtn.style.display = allFilled ? 'block' : 'none';
+    if (saveBtn) {
+        saveBtn.style.display = filledCount === totalWeeks ? 'inline-block' : 'none';
+    }
 }
 
 // ==================== KHỞI ĐỘNG ====================
